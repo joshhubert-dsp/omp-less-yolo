@@ -2,7 +2,7 @@
 #MISE description="Remove pi global tasks from mise"
 set -euo pipefail
 
-CONF_FILE="${XDG_CONFIG_HOME:-${HOME}/.config}/mise/conf.d/pi-less-yolo.toml"
+CONF_FILE="${XDG_CONFIG_HOME:-${HOME}/.config}/mise/conf.d/omp-less-yolo.toml"
 
 if [[ ! -f "${CONF_FILE}" ]]; then
   echo "Nothing to uninstall (${CONF_FILE} not found)."
@@ -14,7 +14,7 @@ rm "${CONF_FILE}"
 echo ""
 echo "Removed ${CONF_FILE}."
 echo ""
-echo "The Docker image (pi-less-yolo:latest) and pi config (~/.pi/agent) were not touched."
-echo "To remove the image:  ${PI_CONTAINER_RUNTIME:-docker} rmi pi-less-yolo:latest"
-echo "To remove pi config:  rm -rf ~/.pi/agent"
+echo "The Docker image (${OMP_IMAGE}) and oh-my-pi config (${OMP_HOST_DIR}) were not touched."
+echo "To remove the image:  ${PI_CONTAINER_RUNTIME:-docker} rmi ${OMP_IMAGE}"
+echo "To remove oh-my-pi config:  rm -rf ~/.omp"
 echo ""

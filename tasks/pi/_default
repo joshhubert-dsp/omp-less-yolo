@@ -19,8 +19,8 @@ PI_ARGS=()
 if [[ -z "${PI_NO_CONTAINER_PROMPT:-}" ]]; then
   PI_ARGS+=(
     "--append-system-prompt"
-    "You are running inside a Docker container as a non-root user. No Docker socket, sudo, or system package installation (apk requires root) is available."
+    "You are running inside a Docker container as a non-root user. No Docker socket, sudo, or system package installation is available."
   )
 fi
 
-"${DOCKER_CMD}" run "${DOCKER_FLAGS[@]}" "${PI_IMAGE}" "${PI_ARGS[@]}" "$@"
+"${DOCKER_CMD}" run "${DOCKER_FLAGS[@]}" "${OMP_IMAGE}" "${PI_ARGS[@]}" "$@"

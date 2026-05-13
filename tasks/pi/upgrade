@@ -1,28 +1,28 @@
 #!/usr/bin/env bash
-#MISE description="Upgrade pi to the latest npm release and rebuild the image"
+#MISE description="Upgrade oh-my-pi to the latest npm release and rebuild the image"
 set -euo pipefail
 
-PI_IMAGE="pi-less-yolo:latest"
 DOCKERFILE="${MISE_TASK_DIR}/../../Dockerfile"
 DOCKER_CMD="${PI_CONTAINER_RUNTIME:-docker}"
 
-"${DOCKER_CMD}" image inspect "${PI_IMAGE}" > /dev/null 2>&1 || {
+"${DOCKER_CMD}" image inspect "${OMP_IMAGE}" > /dev/null 2>&1 || {
   echo "error: image not found — run: mise run pi:build" >&2
   exit 1
 }
 
-CURRENT=$(perl -ne 'print $1 if /pi-coding-agent@([\d.]+)/' "${DOCKERFILE}")
-LATEST=$("${DOCKER_CMD}" run --rm --entrypoint npm "${PI_IMAGE}" view @mariozechner/pi-coding-agent version)
+CURRENT=$(perl -ne 'print $1 if /ARG OMP_VERSION="([\d.]+)"/' "${DOCKERFILE}")
+LATEST=$("${DOCKER_CMD}" run --rm --entrypoint bun "${OMP_IMAGE}" pm view "${OMP_PACKAGE}" version)
 
 if [[ "${CURRENT}" == "${LATEST}" ]]; then
-  echo "Already at latest pi version: ${CURRENT}"
+  echo "Already at latest oh-my-pi version: ${CURRENT}"
   exit 0
 fi
 
-echo "Upgrading pi: ${CURRENT} → ${LATEST}"
+echo "Upgrading oh-my-pi: ${CURRENT} -> ${LATEST}"
 
 # perl -pi -e is cross-platform (macOS and Linux); avoids sed -i / sed -i ''
 # incompatibility.
-perl -pi -e "s/pi-coding-agent\@[\d.]+/pi-coding-agent\@${LATEST}/" "${DOCKERFILE}"
+perl -pi -e "s/ARG OMP_VERSION=\"[\d.]+\"/ARG OMP_VERSION=\"${LATEST}\"/" "${DOCKERFILE}"
+perl -pi -e "s/OMP_VERSION = \"[\d.]+\"/OMP_VERSION = \"${LATEST}\"/" "${MISE_TASK_DIR}/../../.mise.toml"
 
 mise run pi:build

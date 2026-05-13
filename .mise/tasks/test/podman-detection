@@ -7,8 +7,8 @@ if ! command -v podman &>/dev/null; then
   exit 0
 fi
 
-if ! podman image inspect pi-less-yolo:latest &>/dev/null; then
-  echo "  SKIP pi-less-yolo:latest not in podman image store"
+if ! podman image inspect "${OMP_IMAGE}" &>/dev/null; then
+  echo "  SKIP ${OMP_IMAGE} not in podman image store"
   exit 0
 fi
 

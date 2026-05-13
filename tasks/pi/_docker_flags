@@ -1,7 +1,6 @@
+#!/usr/bin/env bash
 # Builds DOCKER_FLAGS for pi container tasks. Source this file; do not execute directly.
 # Usage: source "$(dirname "$0")/_docker_flags"
-
-PI_IMAGE="pi-less-yolo:latest"
 
 # PI_CONTAINER_RUNTIME overrides; otherwise detect podman via version output or binary path.
 # || true: some docker-as-podman shims exit non-zero, which would abort under pipefail.
@@ -17,11 +16,11 @@ else
   fi
 fi
 
-"${DOCKER_CMD}" image inspect "${PI_IMAGE}" > /dev/null 2>&1 || mise run pi:build
+"${DOCKER_CMD}" image inspect "${OMP_IMAGE}" > /dev/null 2>&1 || mise run pi:build
 
 # Pre-create so Docker doesn't auto-create it as root (breaking writes by the
 # container's non-root UID).
-mkdir -p "${HOME}/.pi/agent"
+mkdir -p "${OMP_HOST_DIR}"
 
 # Permissions:
 #   --user $(id -u):$(id -g)   files created in /workspace are owned by the
@@ -31,11 +30,9 @@ mkdir -p "${HOME}/.pi/agent"
 #
 # Mounts:
 #   $(pwd):$(pwd)              current directory, mounted at its real host path.
-#   ~/.pi/agent:/pi-agent      pi config, credentials, sessions, and managed
-#                               binaries from the host. PI_CODING_AGENT_DIR
-#                               tells pi to use this path instead of deriving
-#                               it from $HOME, sidestepping any HOME-resolution
-#                               issues inside the container.
+#   ~/.omp:/home/piuser/.omp   omp config, credentials, sessions, and managed
+#                               binaries from the host. This matches omp's
+#                               default config root under $HOME.
 DOCKER_FLAGS=(
   "--rm"
   "--user" "$(id -u):$(id -g)"
@@ -43,11 +40,12 @@ DOCKER_FLAGS=(
   "--security-opt=no-new-privileges"
   "--ipc=none"
   "--volume" "$(pwd):$(pwd)${_PI_WORKDIR_RO:+:ro}"  # :ro set by pi:readonly
-  "--volume" "${HOME}/.pi/agent:/pi-agent"
+  "--volume" "${OMP_HOST_DIR}:/home/piuser/.omp"
   "--workdir" "$(pwd)"
-  "--env" "PI_CODING_AGENT_DIR=/pi-agent"
   "--env" "TERM=${TERM:-xterm-256color}"
   "--env" "COLORTERM=${COLORTERM:-truecolor}"
+  "--env" "OMP_PACKAGE=${OMP_PACKAGE}"
+  "--env" "OMP_VERSION=${OMP_VERSION}"
 )
 
 # Podman-specific: use --userns=keep-id to properly map the user namespace
@@ -57,13 +55,14 @@ if [[ "${DOCKER_CMD}" == "podman" ]]; then
 fi
 
 # Forward pi-related env vars and API keys if set on the host.
-# Auth file (~/.pi/agent/auth.json) takes priority over these if present.
+# Auth file (~/.omp/agent/auth.json) takes priority over these if present.
 PI_ENV_VARS=(
   PI_SKIP_VERSION_CHECK
   PI_CACHE_RETENTION
   PI_PACKAGE_DIR
   VISUAL
   EDITOR
+  EXA_API_KEY
   ANTHROPIC_API_KEY
   AZURE_OPENAI_API_KEY
   OPENAI_API_KEY

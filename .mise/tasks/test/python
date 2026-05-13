@@ -3,4 +3,4 @@
 set -euo pipefail
 
 DOCKER_CMD="${PI_CONTAINER_RUNTIME:-docker}"
-"${DOCKER_CMD}" run --rm pi-less-yolo:latest bash -c 'python3 --version'
+"${DOCKER_CMD}" run --rm "${OMP_IMAGE}" bash -c 'python3 --version'

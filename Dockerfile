@@ -3,6 +3,7 @@ FROM cgr.dev/chainguard/node:latest-dev@sha256:8cef8e2f7f6f7e96c224a4a4d6123cd55
 # openssh-client: ssh binary for git-over-SSH (PI_SSH_AGENT=1) and ssh-add.
 USER root
 RUN apk add --no-cache \
+        bash \
         curl \
         ca-certificates \
         git \
@@ -10,28 +11,23 @@ RUN apk add --no-cache \
         tmux
 
 # Install mise (GPG-verified via mise-release.asc).
-RUN --mount=type=bind,source=mise-release.asc,target=/tmp/mise-release.asc <<'EOF'
-set -e
-apk add --no-cache gpg gpg-agent
-gpg --import /tmp/mise-release.asc
-curl -fsSL https://mise.jdx.dev/install.sh.sig -o /tmp/mise-install.sh.sig
-gpg --decrypt /tmp/mise-install.sh.sig > /tmp/mise-install.sh
-MISE_VERSION=2026.5.0 MISE_INSTALL_PATH=/usr/local/bin/mise sh /tmp/mise-install.sh
-rm /tmp/mise-install.sh.sig /tmp/mise-install.sh
-apk del gpg gpg-agent
-EOF
+COPY mise-release.asc /tmp/mise-release.asc
+RUN apk add --no-cache gpg gpg-agent \
+    && gpg --import /tmp/mise-release.asc \
+    && curl -fsSL https://mise.jdx.dev/install.sh.sig -o /tmp/mise-install.sh.sig \
+    && gpg --decrypt /tmp/mise-install.sh.sig > /tmp/mise-install.sh \
+    && MISE_VERSION=2026.5.0 MISE_INSTALL_PATH=/usr/local/bin/mise sh /tmp/mise-install.sh \
+    && rm /tmp/mise-release.asc /tmp/mise-install.sh.sig /tmp/mise-install.sh \
+    && apk del gpg gpg-agent
 
 # ARG (not ENV): available during build, not baked in. At runtime mise defaults
 # to ~/.local/share/mise, which the container user can write to.
 ARG MISE_DATA_DIR=/usr/local/share/mise
 
 # Install uv via mise and expose uv and uvx on PATH.
-RUN <<'EOF'
-set -e
-mise install uv@0.11.8
-ln -s "$(mise exec uv@0.11.8 -- which uv)" /usr/local/bin/uv
-ln -s "$(mise exec uv@0.11.8 -- which uvx)" /usr/local/bin/uvx
-EOF
+RUN mise install uv@0.11.8 \
+    && ln -s "$(mise exec uv@0.11.8 -- which uv)" /usr/local/bin/uv \
+    && ln -s "$(mise exec uv@0.11.8 -- which uvx)" /usr/local/bin/uvx
 
 ENV UV_PYTHON_INSTALL_DIR=/usr/local/share/uv/python
 
@@ -39,13 +35,22 @@ ENV UV_PYTHON_INSTALL_DIR=/usr/local/share/uv/python
 RUN uv python install 3.14.4 \
     && ln -s "$(uv python find 3.14.4)" /usr/local/bin/python3
 
-# Install pi globally
-RUN npm install -g "@mariozechner/pi-coding-agent@0.73.0"
+# Install Bun and oh-my-pi globally.
+ARG OMP_PACKAGE
+ARG OMP_VERSION
+ENV BUN_INSTALL=/usr/local/share/bun
+ENV PATH="${BUN_INSTALL}/bin:${PATH}"
+# TODO harden bun install too
+RUN curl -fsSL https://bun.sh/install -o /tmp/bun-install.sh \
+    && bash /tmp/bun-install.sh \
+    && rm /tmp/bun-install.sh \
+    && bun install -g "${OMP_PACKAGE}@${OMP_VERSION}" \
+    && ln -sf "${BUN_INSTALL}/bin/omp" /usr/local/bin/omp
 
-# Prepend extension binaries (host-mounted via /pi-agent). Security: binaries
+# Prepend extension binaries (host-mounted via /home/piuser/.omp/agent). Security: binaries
 # here can shadow any command; no privilege escalation (--cap-drop=ALL,
-# --no-new-privileges), but review ~/.pi/agent/npm-global/bin/ after installs.
-ENV PATH="/pi-agent/npm-global/bin:${PATH}"
+# --no-new-privileges), but review ~/.omp/agent/npm-global/bin/ after installs.
+ENV PATH="/home/piuser/.omp/agent/npm-global/bin:${PATH}"
 
 # /home/piuser: world-writable (1777) so any runtime UID can write here.
 # /home/piuser/.ssh: root-owned 755; SSH accepts it and the runtime user can
@@ -53,7 +58,7 @@ ENV PATH="/pi-agent/npm-global/bin:${PATH}"
 # /etc/passwd: world-writable so the entrypoint can add the runtime UID.
 #   SSH calls getpwuid(3) and hard-fails without a passwd entry. Safe here
 #   because --cap-drop=ALL and --no-new-privileges block privilege escalation.
-# .npmrc sets prefix=/pi-agent/npm-global so extensions persist across restarts.
+# .npmrc sets prefix=~/.omp/agent/npm-global so npm-based extensions persist across restarts.
 # Written as a literal file because ENV HOME is not yet set to /home/piuser.
 RUN mkdir -p /home/piuser /home/piuser/.ssh \
     && chmod 1777 /home/piuser \
@@ -61,30 +66,14 @@ RUN mkdir -p /home/piuser /home/piuser/.ssh \
     && chmod a+w /etc/passwd \
     && touch /home/piuser/.ssh/known_hosts \
     && chmod 666 /home/piuser/.ssh/known_hosts \
-    && echo "prefix=/pi-agent/npm-global" > /home/piuser/.npmrc
+    && echo "prefix=/home/piuser/.omp/agent/npm-global" > /home/piuser/.npmrc
 
 ENV HOME=/home/piuser
 
-# Register the runtime UID in /etc/passwd before starting pi.
+# Register the runtime UID in /etc/passwd before starting omp.
 # SSH calls getpwuid(3) and hard-fails without an entry; nss_wrapper is
 # unavailable in Wolfi so we append directly.
-RUN <<'EOF'
-cat > /usr/local/bin/entrypoint.sh << 'ENTRYPOINT'
-#!/bin/sh
-set -e
-
-if ! grep -q "^[^:]*:[^:]*:$(id -u):" /etc/passwd; then
-    printf 'piuser:x:%d:%d:piuser:%s:/bin/sh\n' \
-        "$(id -u)" "$(id -g)" "${HOME}" >> /etc/passwd
-fi
-
-# Pass through to a shell when invoked via `pi:shell`; otherwise run pi.
-case "${1:-}" in
-    bash|sh) exec "$@" ;;
-    *) exec pi "$@" ;;
-esac
-ENTRYPOINT
-chmod +x /usr/local/bin/entrypoint.sh
-EOF
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

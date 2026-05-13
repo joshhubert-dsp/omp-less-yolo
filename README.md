@@ -1,29 +1,33 @@
-# pi-less-yolo
+# omp-less-yolo
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![pi version](https://img.shields.io/badge/pi--coding--agent-0.73.0-blueviolet)](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent)
+[![oh-my-pi version](https://img.shields.io/badge/oh--my--pi-14.8.1-blueviolet)](https://www.npmjs.com/package/@oh-my-pi/pi-coding-agent)
 [![Base Image](https://img.shields.io/badge/base%20image-chainguard%2Fnode-F4835E?logo=docker)](https://images.chainguard.dev/directory/image/node/overview)
-[![Dependabot](https://img.shields.io/badge/Dependabot-enabled-brightgreen?logo=dependabot)](https://github.com/cjermain/pi-less-yolo/blob/main/.github/dependabot.yml)
+[![Dependabot](https://img.shields.io/badge/Dependabot-enabled-brightgreen?logo=dependabot)](https://github.com/cjermain/omp-less-yolo/blob/main/.github/dependabot.yml)
 [![mise](https://mise-versions.jdx.dev/badge.svg)](https://mise.jdx.dev)
-[![CI](https://img.shields.io/github/actions/workflow/status/cjermain/pi-less-yolo/ci.yml?style=flat&label=CI)](https://github.com/cjermain/pi-less-yolo/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/cjermain/omp-less-yolo/ci.yml?style=flat&label=CI)](https://github.com/cjermain/omp-less-yolo/actions/workflows/ci.yml)
 
-> Run [pi-coding-agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) (a multi-provider AI coding agent supporting Claude, GPT, Gemini, and [many more](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent#providers--models)) inside an isolated Docker container — limiting the blast radius of agent-driven changes to your mounted working directory.
+Forked from [pi-less-yolo](https://github.com/cjermain/pi-less-yolo) to work with both the official oh-my-pi package release, as well as local edit forks of that package.
+Requires setting `OMP_` env vars in `.env` before running `mise run install`, see `.env.example`. These env vars are written to the intalled toml file for global resolution.
 
-![pi-less-yolo demo: filesystem isolation proof and AI-assisted bug fix](docs/demo.gif)
 
-A [mise](https://mise.jdx.dev) shim that wraps the **pi** AI coding agent in a [Chainguard](https://chainguard.dev)-based container with your current directory and `~/.pi/agent` volume-mounted — and nothing else.
+> Run [oh-my-pi](https://www.npmjs.com/package/@oh-my-pi/pi-coding-agent) (a multi-provider AI coding agent supporting Claude, GPT, Gemini, local OpenAI-compatible models) inside an isolated Docker container — limiting the blast radius of agent-driven changes to your mounted working directory.
 
-Pi defaults to running with full access to your filesystem. This repo constrains it so the agent cannot touch files outside your project, cannot escalate privileges, and runs as your own user.
+![omp-less-yolo demo: filesystem isolation proof and AI-assisted bug fix](docs/demo.gif)
+
+A [mise](https://mise.jdx.dev) shim that wraps the **oh-my-pi** (`omp`) AI coding agent in a [Chainguard](https://chainguard.dev)-based container with your current directory and `~/.omp` volume-mounted — and nothing else.
+
+Oh-my-pi defaults to running with full access to your filesystem. This repo constrains it so the agent cannot touch files outside your project, cannot escalate privileges, and runs as your own user.
 
 > **This is "less YOLO", not "no YOLO".** Container escapes exist. The mounted directories are fully writable. This is a meaningful reduction in risk, not a security guarantee.
 
 ## Why use this?
 
-AI coding agents are powerful — and dangerous. A hallucinating model, a misunderstood instruction, or a runaway loop can delete, overwrite, or exfiltrate files anywhere on your machine. `pi-less-yolo` gives you a practical safety net:
+AI coding agents are powerful — and dangerous. A hallucinating model, a misunderstood instruction, or a runaway loop can delete, overwrite, or exfiltrate files anywhere on your machine. `omp-less-yolo` gives you a practical safety net:
 
 - **Filesystem isolation** — the agent can only read and write your current project directory.
 - **No privilege escalation** — all Linux capabilities are dropped; `no-new-privileges` is set.
-- **Reproducible environment** — a pinned, minimal Chainguard Node image with only the tools pi needs.
+- **Reproducible environment** — a pinned, minimal Chainguard Node image with Bun and only the tools oh-my-pi needs.
 - **Zero friction** — one `mise run pi` command from any project; no manual Docker incantations.
 
 If you use [Claude Code](https://docs.anthropic.com/en/docs/claude-code), Aider, Cursor, or any other LLM-based coding assistant and want sandboxed execution, this pattern applies to you.
@@ -37,12 +41,12 @@ If you use [Claude Code](https://docs.anthropic.com/en/docs/claude-code), Aider,
 ## Install
 
 ```bash
-git clone https://github.com/cjermain/pi-less-yolo.git
-cd pi-less-yolo
+git clone https://github.com/joshhubert-dsp/omp-less-yolo.git
+cd omp-less-yolo
 mise run install
 ```
 
-`install` writes a single file — `~/.config/mise/conf.d/pi-less-yolo.toml` — that points mise at the `tasks/` directory in the cloned repo. The five pi tasks become available globally from any directory. The repo must stay at the cloned path; if you move it, re-run `mise run install`.
+`install` writes a single file — `~/.config/mise/conf.d/omp-less-yolo.toml` — that points mise at the `tasks/` directory in the cloned repo. The pi-prefixed compatibility tasks become available globally from any directory. The repo must stay at the cloned path; if you move it, re-run `mise run install`.
 
 Then build the Docker image (one-time, ~2 minutes):
 
@@ -52,18 +56,18 @@ mise run pi:build
 
 ## Usage
 
-Run pi from any project directory:
+Run oh-my-pi from any project directory:
 
 ```bash
 cd ~/my-project
 mise run pi
 ```
 
-Your current directory is mounted at its real path inside the container (e.g. `/home/you/my-project`). Pi uses this path for session tracking, so each project gets its own session history. Pi's config, sessions, and credentials are mounted from `~/.pi/agent`. Files written by the agent are owned by your user on the host.
+Your current directory is mounted at its real path inside the container (e.g. `/home/you/my-project`). Oh-my-pi uses this path for session tracking, so each project gets its own session history. Config, sessions, and credentials are mounted from `~/.omp`. Files written by the agent are owned by your user on the host.
 
 ### Non-interactive use
 
-Pi's `-p` flag runs a single prompt and exits. All arguments after `--` are passed through to pi:
+Oh-my-pi's `-p` flag runs a single prompt and exits. All arguments after `--` are passed through to `omp`:
 
 ```bash
 mise run pi -- -p "summarize this repo"
@@ -96,19 +100,20 @@ alias pi='mise run pi'
 
 | Task | Description |
 |---|---|
-| `mise run pi` | Run the pi AI coding agent in the sandboxed container |
+| `mise run pi` | Run oh-my-pi in the sandboxed container |
 | `mise run pi:pi-acp` | Run pi-acp to provide Agent Client Protocol (ACP) stdio connection for IDE's to connect (same mounts as pi)|
-| `mise run pi:readonly` | Run pi with the project directory mounted read-only and file-modification tools disabled |
+| `mise run pi:readonly` | Run oh-my-pi with the project directory mounted read-only and file-modification tools disabled |
 | `mise run pi:build` | Build or rebuild the Docker container image |
 | `mise run pi:shell` | Open a bash shell in the container (same mounts as `pi`) |
-| `mise run pi:upgrade` | Upgrade pi to the latest npm release and rebuild |
+| `mise run pi:upgrade` | Upgrade oh-my-pi to the latest npm release and rebuild |
 | `mise run pi:health` | Check the setup for common problems |
+
 
 ## Agent Client Protocol (ACP) Connections
 
 The `mise run pi:pi-acp` task command can be utilzed for connecting IDE's over [ACP](https://agentclientprotocol.com/overview/introduction) to the Pi coding agent in the sandboxed container.
 
-The task will install [pi-acp](https://github.com/svkozak/pi-acp) to the `/pi-agent/npm-global` shared directory, if not already installed.
+The task will install [pi-acp](https://github.com/svkozak/pi-acp) to the `~/.omp/agent/npm-global` shared directory, if not already installed.
 
 Most IDE's will expect to run the `pi-acp` command, so add this to your shell profile:
 
@@ -124,19 +129,19 @@ To update the package run the task `mise run pi:shell` and once inside the shell
 ### Update the shim (new features in this repo)
 
 ```bash
-cd /path/to/pi-less-yolo
+cd /path/to/omp-less-yolo
 mise run update
 ```
 
 `git pull` is all that's needed. Because mise includes the `tasks/` directory directly, changes go live immediately with no reinstall.
 
-### Upgrade pi to the latest release
+### Upgrade oh-my-pi to the latest release
 
 ```bash
 mise run pi:upgrade
 ```
 
-Fetches the latest `@mariozechner/pi-coding-agent` version from npm, updates the `npm install -g` line in `Dockerfile`, and rebuilds the image.
+Fetches the latest `@oh-my-pi/pi-coding-agent` version from npm, updates the `OMP_VERSION` defaults, and rebuilds the image.
 
 ## Health check
 
@@ -144,29 +149,29 @@ Fetches the latest `@mariozechner/pi-coding-agent` version from npm, updates the
 mise run pi:health
 ```
 
-Checks mise version, Docker availability, image existence, task files, npm (for upgrade), `~/.pi/agent`, and tmux passthrough support.
+Checks mise version, Docker availability, image existence, task files, `~/.omp`, local-model configuration, and tmux passthrough support.
 
 ## Uninstall
 
 ```bash
-cd /path/to/pi-less-yolo
+cd /path/to/omp-less-yolo
 mise run uninstall
 ```
 
-Removes `~/.config/mise/conf.d/pi-less-yolo.toml`. The Docker image and `~/.pi/agent` are left untouched.
+Removes `~/.config/mise/conf.d/omp-less-yolo.toml`. The Docker image and `~/.omp` are left untouched.
 
 To remove everything:
 
 ```bash
 mise run uninstall
-docker rmi pi-less-yolo:latest
-rm -rf ~/.pi/agent
-rm -rf /path/to/pi-less-yolo
+docker rmi omp-less-yolo:latest
+rm -rf ~/.omp
+rm -rf /path/to/omp-less-yolo
 ```
 
 ## Authentication
 
-Pi supports two ways to authenticate with a provider:
+Oh-my-pi supports two ways to authenticate with a provider:
 
 **API key via environment variable** (recommended for scripted or non-interactive use):
 
@@ -194,10 +199,15 @@ The following environment variables are forwarded from your host into the contai
 | Kimi | `KIMI_API_KEY` |
 | MiniMax | `MINIMAX_API_KEY` |
 | MiniMax (China) | `MINIMAX_CN_API_KEY` |
+| Exa web search | `EXA_API_KEY` |
 
-Pi config variables (`PI_SKIP_VERSION_CHECK`, `PI_CACHE_RETENTION`, `PI_PACKAGE_DIR`) and editor variables (`VISUAL`, `EDITOR`) are also forwarded. No other host environment variables are passed into the container.
+Pi/oh-my-pi config variables (`PI_SKIP_VERSION_CHECK`, `PI_CACHE_RETENTION`, `PI_PACKAGE_DIR`) and editor variables (`VISUAL`, `EDITOR`) are also forwarded. No other host environment variables are passed into the container.
 
-**Auth file** (`~/.pi/agent/auth.json`): credentials stored here take priority over environment variables. Use `/login` inside pi to set this up interactively. See [pi's provider docs](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/providers.md) for details.
+**Auth file** (`~/.omp/auth.json`): credentials stored here take priority over environment variables.
+
+### Web Search
+
+The container forwards `EXA_API_KEY` and the default container prompt explicitly allows web search only through Exa. Other web-search provider keys such as Brave, Tavily, and Perplexity are intentionally not forwarded.
 
 ## Security model
 
@@ -208,27 +218,26 @@ The container is launched with:
 - `--security-opt=no-new-privileges` — prevents privilege escalation via setuid binaries
 - `--ipc=none` — isolated IPC namespace; no shared memory with other containers
 - `--volume $(pwd):$(pwd)` — your current directory is mounted at its real host path; the container's working directory is set to match
-- `--volume ~/.pi/agent:/pi-agent` — pi config, credentials, and sessions
+- `--volume ~/.omp:/home/piuser/.omp` — oh-my-pi config, credentials, and sessions
 
-Mounting the directory at its real path (rather than a fixed `/workspace`) means pi's session tracking reflects the actual project path, so each project gets distinct session history.
+Mounting the directory at its real path (rather than a fixed `/workspace`) means oh-my-pi's session tracking reflects the actual project path, so each project gets distinct session history.
 
 The agent cannot reach other directories on your host. It can make arbitrary network requests and execute any command available inside the container image.
 
 ### Read-only mode
 
-`mise run pi:readonly` mounts the project directory read-only and restricts pi to the `read`, `grep`, `find`, and `ls` tools. The agent can answer questions about the codebase but cannot write files or run shell commands — enforced at the kernel level via the `:ro` volume mount.
+`mise run pi:readonly` mounts the project directory read-only and restricts oh-my-pi to the `read`, `grep`, `find`, and `ls` tools. The agent can answer questions about the codebase but cannot write files or run shell commands — enforced at the kernel level via the `:ro` volume mount.
 
 Use it for untrusted or sensitive codebases.
 
-### Pi packages
+### Oh-my-pi packages
 
-Pi packages installed inside the container (`pi install npm:...`, `pi install git:...`)
-are written to `~/.pi/agent/npm-global/lib/node_modules/` and `~/.pi/agent/git/` and loaded as extensions on
+Oh-my-pi packages installed inside the container are written to `~/.omp/agent/npm-global/lib/node_modules/` and `~/.omp/agent/git/` and loaded as extensions on
 every subsequent run. A prompt-injected install persists to the host and survives the
 session.
 
-> **Accepted risk.** Audit installed packages with `pi list` and review
-> `~/.pi/agent/git/` and `~/.pi/agent/npm/` periodically.
+> **Accepted risk.** Audit installed packages and review
+> `~/.omp/agent/git/` and `~/.omp/agent/npm/` periodically.
 
 ### Git identity
 
@@ -238,7 +247,7 @@ If `~/.gitconfig` exists on the host it is mounted read-only at startup, so the 
 
 ### Container context prompt
 
-By default pi is told it is running inside a Docker container as a non-root user, and that the Docker socket, sudo, and system package installation are unavailable. This prevents the agent from confidently suggesting commands that will fail. Opt out by setting `PI_NO_CONTAINER_PROMPT=1`.
+By default oh-my-pi is told it is running inside a Docker container as a non-root user, that the Docker socket, sudo, and system package installation are unavailable, and that web search is allowed only through Exa. This prevents the agent from confidently suggesting commands that will fail or using unapproved web-search providers. Opt out by setting `PI_NO_CONTAINER_PROMPT=1`.
 
 ### SSH agent forwarding
 
@@ -256,11 +265,11 @@ Or export it in your shell profile to make it permanent.
 
 Local model servers are **disabled by default**. Set `PI_LOCAL_MODELS=1` to share
 the host network namespace, making `localhost` inside the container identical to
-`localhost` on the host. Model URLs that work when running pi natively work
+`localhost` on the host. Model URLs that work when running oh-my-pi natively work
 identically inside the container with no changes to `models.json` or to the model
 server's binding address.
 
-Create `~/.pi/agent/models.json` using the same URL you would use on the host:
+Create `~/.omp/agent/models.json` using the same URL you would use on the host:
 
 ```json
 {
@@ -281,7 +290,7 @@ Create `~/.pi/agent/models.json` using the same URL you would use on the host:
 }
 ```
 
-Then start pi with the flag and select the model with `/model`:
+Then start oh-my-pi with the flag and select the model with `/model`:
 
 ```bash
 PI_LOCAL_MODELS=1 mise run pi
@@ -328,7 +337,7 @@ To fix this permanently instead:
 
 ## Podman support
 
-`pi-less-yolo` works with [Podman](https://podman.io) as a drop-in Docker replacement.
+`omp-less-yolo` works with [Podman](https://podman.io) as a drop-in Docker replacement.
 Podman is automatically detected when the `docker` command in PATH resolves to the
 podman binary — either via a compatibility wrapper or a symlink.
 
@@ -375,15 +384,15 @@ To modify the container — adding tools, changing the base image, pinning diffe
 mise run pi:build
 ```
 
-The `npm install -g` line near the bottom of `Dockerfile` pins the pi version. `mise run pi:upgrade` updates it automatically; you can also edit the version string by hand.
+The `OMP_VERSION` value in `.mise.toml` and the matching Dockerfile build arg pin the oh-my-pi version. `mise run pi:upgrade` updates it automatically; you can also edit the version string by hand.
 
 ## Related projects
 
-- [pi-coding-agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) — the upstream AI coding agent this repo wraps
+- [oh-my-pi](https://www.npmjs.com/package/@oh-my-pi/pi-coding-agent) — the AI coding agent this repo wraps
 - [mise](https://mise.jdx.dev) — the polyglot dev-tool manager used for task running
 - [Chainguard Images](https://chainguard.dev) — minimal, hardened container base images used here
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) — Anthropic's official sandboxed coding agent CLI, a similar concept
 
 ---
 
-**Keywords:** docker sandbox AI coding agent, sandboxed LLM agent, pi-coding-agent docker, isolated Claude CLI, mise AI task runner, Chainguard AI container, prevent AI agent filesystem access, secure coding agent container, ai agent docker isolation
+**Keywords:** docker sandbox AI coding agent, sandboxed LLM agent, oh-my-pi docker, isolated Claude CLI, mise AI task runner, Chainguard AI container, prevent AI agent filesystem access, secure coding agent container, ai agent docker isolation

@@ -9,7 +9,7 @@
       "enabled": false
     },
     {
-      "matchDepNames": ["@mariozechner/pi-coding-agent"],
+      "matchDepNames": ["@oh-my-pi/pi-coding-agent"],
       "minimumReleaseAge": null
     }
   ],
@@ -48,12 +48,13 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^Dockerfile$/", "/^README\\.md$/"],
+      "managerFilePatterns": ["/^Dockerfile$/", "/^README\\.md$/", "/^\\.mise\\.toml$/"],
       "matchStrings": [
-        "pi-coding-agent@(?<currentValue>[\\d.]+)",
-        "pi--coding--agent-(?<currentValue>[\\d.]+)-blueviolet"
+        "ARG OMP_VERSION=\"(?<currentValue>[\\d.]+)\"",
+        "OMP_VERSION = \"(?<currentValue>[\\d.]+)\"",
+        "oh--my--pi-(?<currentValue>[\\d.]+)-blueviolet"
       ],
-      "depNameTemplate": "@mariozechner/pi-coding-agent",
+      "depNameTemplate": "@oh-my-pi/pi-coding-agent",
       "datasourceTemplate": "npm"
     }
   ]

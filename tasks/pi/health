@@ -20,7 +20,7 @@ version_gte() {
   printf '%s\n%s' "$2" "$1" | sort -C -V
 }
 
-echo "pi-less-yolo health check"
+echo "omp-less-yolo health check"
 echo "========================="
 echo ""
 
@@ -58,19 +58,19 @@ else
 fi
 
 # --- image ------------------------------------------------------------------
-if "${DOCKER_CMD}" image inspect "pi-less-yolo:latest" > /dev/null 2>&1; then
-  pass "image pi-less-yolo:latest exists"
+if "${DOCKER_CMD}" image inspect "${OMP_IMAGE}" > /dev/null 2>&1; then
+  pass "image ${OMP_IMAGE} exists"
 else
-  warn "image pi-less-yolo:latest not found — run: mise run pi:build"
+  warn "image ${OMP_IMAGE} not found — run: mise run pi:build"
 fi
 
 # --- conf.d entry -----------------------------------------------------------
 CONF_D="${XDG_CONFIG_HOME:-${HOME}/.config}/mise/conf.d"
-CONF_FILE="${CONF_D}/pi-less-yolo.toml"
+CONF_FILE="${CONF_D}/omp-less-yolo.toml"
 if [[ -f "${CONF_FILE}" ]]; then
   pass "global config ${CONF_FILE}"
 else
-  fail "global config not found — run: mise run install (from the pi-less-yolo repo)"
+  fail "global config not found — run: mise run install (from the omp-less-yolo repo)"
 fi
 
 # --- task files -------------------------------------------------------------
@@ -85,19 +85,19 @@ for NAME in _default build shell upgrade health; do
   fi
 done
 
-# --- ~/.pi/agent ------------------------------------------------------------
-if [[ -d "${HOME}/.pi/agent" ]]; then
-  _agent_owner=$(stat -c '%u' "${HOME}/.pi/agent" 2>/dev/null || stat -f '%u' "${HOME}/.pi/agent" 2>/dev/null)
+# --- ~/.omp -----------------------------------------------------------
+if [[ -d "${OMP_HOST_DIR}" ]]; then
+  _agent_owner=$(stat -c '%u' "${OMP_HOST_DIR}" 2>/dev/null || stat -f '%u' "${OMP_HOST_DIR}" 2>/dev/null)
   if [[ "${_agent_owner}" == "$(id -u)" ]]; then
     # shellcheck disable=SC2088
-    pass "~/.pi/agent exists and is owned by current user"
+    pass "${OMP_HOST_DIR} exists and is owned by current user"
   else
     # shellcheck disable=SC2088
-    fail "~/.pi/agent is owned by UID ${_agent_owner}, not $(id -u) — run: sudo chown -R \"\$(id -u):\$(id -g)\" ~/.pi/agent"
+    fail "${OMP_HOST_DIR} is owned by UID ${_agent_owner}, not $(id -u) — run: sudo chown -R \"\$(id -u):\$(id -g)\" \"${OMP_HOST_DIR}\""
   fi
 else
   # shellcheck disable=SC2088
-  warn "~/.pi/agent does not exist — it will be created on first run"
+  warn "${OMP_HOST_DIR} does not exist — it will be created on first run"
 fi
 
 # --- tmux passthrough -------------------------------------------------------
@@ -136,7 +136,7 @@ else
 fi
 
 # --- local model servers ---------------------------------------------------
-MODELS_JSON="${HOME}/.pi/agent/models.json"
+MODELS_JSON="${OMP_HOST_DIR}/agent/models.json"
 _has_local_urls=0
 [[ -f "${MODELS_JSON}" ]] && grep -qE "localhost|127\.0\.0\.1" "${MODELS_JSON}" && _has_local_urls=1
 if [[ -n "${PI_LOCAL_MODELS:-}" ]]; then

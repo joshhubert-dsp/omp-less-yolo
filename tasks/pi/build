@@ -17,8 +17,10 @@ BUILD_FLAGS=()
 [[ "$(uname -s)" == "Linux" ]] && BUILD_FLAGS+=("--network=host")
 
 "${DOCKER_CMD}" build "${BUILD_FLAGS[@]}" \
+  --build-arg "OMP_PACKAGE=${OMP_PACKAGE}" \
+  --build-arg "OMP_VERSION=${OMP_VERSION}" \
   -f "${REPO_ROOT}/Dockerfile" \
-  -t "pi-less-yolo:latest" \
+  -t "${OMP_IMAGE}" \
   "${REPO_ROOT}"
 
-echo "Image 'pi-less-yolo:latest' built successfully."
+echo "Image '${OMP_IMAGE}' built successfully."

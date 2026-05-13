@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-#MISE description="Smoke test that pi starts and reports its version"
+#MISE description="Smoke test that omp starts and reports its version"
 set -euo pipefail
 
 DOCKER_CMD="${PI_CONTAINER_RUNTIME:-docker}"
-"${DOCKER_CMD}" run --rm pi-less-yolo:latest --version
+"${DOCKER_CMD}" run --rm "${OMP_IMAGE}" --version
