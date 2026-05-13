@@ -1,9 +1,12 @@
+# syntax=docker/dockerfile:1.7
 FROM cgr.dev/chainguard/node:latest-dev@sha256:337a0e2860e69cb2ae25e2e5e942e18d08cf72f3470cb9081325e852dff7e237
 
 # openssh-client: ssh binary for git-over-SSH (PI_SSH_AGENT=1) and ssh-add.
 USER root
+ENV HOME=/home/piuser
+RUN mkdir /home/piuser
+
 RUN apk add --no-cache \
-        bash \
         curl \
         ca-certificates \
         git \
@@ -38,14 +41,38 @@ RUN uv python install 3.14.4 \
 # Install Bun and oh-my-pi globally.
 ARG OMP_PACKAGE
 ARG OMP_VERSION
+ARG OMP_LOCAL_PACKAGE
 ENV BUN_INSTALL=/usr/local/share/bun
 ENV PATH="${BUN_INSTALL}/bin:${PATH}"
 # TODO harden bun install too
-RUN curl -fsSL https://bun.sh/install -o /tmp/bun-install.sh \
+RUN curl --proto '=https' --tlsv1.2 -fsSL https://bun.sh/install -o /tmp/bun-install.sh \
     && bash /tmp/bun-install.sh \
-    && rm /tmp/bun-install.sh \
-    && bun install -g "${OMP_PACKAGE}@${OMP_VERSION}" \
-    && ln -sf "${BUN_INSTALL}/bin/omp" /usr/local/bin/omp
+    && rm /tmp/bun-install.sh
+
+# TODO separate named build stage for local package build, since npm package doesn't need rust install
+# install rust for the native calls
+RUN curl --proto '=https' --tlsv1.2 -fsS https://sh.rustup.rs -o /tmp/rust-install.sh \
+    && bash /tmp/rust-install.sh -y \
+    && rm /tmp/rust-install.sh
+
+ENV PATH="${HOME}/.cargo/bin:${PATH}"
+
+# Copy the optional local package context so native build steps can write.
+# hadolint ignore=DL3022
+COPY --from=omp-local . /tmp/omp-local
+RUN bash <<'EOF'
+set -euo pipefail
+
+if [[ -n "${OMP_LOCAL_PACKAGE}" ]]; then
+    cd /tmp/omp-local
+    bun run build:native
+    bun run install:dev
+else
+    bun install -g "${OMP_PACKAGE}@${OMP_VERSION}"
+fi
+
+ln -sf "${BUN_INSTALL}/bin/omp" /usr/local/bin/omp
+EOF
 
 # Prepend extension binaries (host-mounted via /home/piuser/.omp/agent). Security: binaries
 # here can shadow any command; no privilege escalation (--cap-drop=ALL,
@@ -67,8 +94,6 @@ RUN mkdir -p /home/piuser /home/piuser/.ssh \
     && touch /home/piuser/.ssh/known_hosts \
     && chmod 666 /home/piuser/.ssh/known_hosts \
     && echo "prefix=/home/piuser/.omp/agent/npm-global" > /home/piuser/.npmrc
-
-ENV HOME=/home/piuser
 
 # Register the runtime UID in /etc/passwd before starting omp.
 # SSH calls getpwuid(3) and hard-fails without an entry; nss_wrapper is

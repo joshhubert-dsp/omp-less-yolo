@@ -16,11 +16,30 @@ DOCKER_CMD="${PI_CONTAINER_RUNTIME:-docker}"
 BUILD_FLAGS=()
 [[ "$(uname -s)" == "Linux" ]] && BUILD_FLAGS+=("--network=host")
 
-"${DOCKER_CMD}" build "${BUILD_FLAGS[@]}" \
+if [[ -n "${OMP_LOCAL_PACKAGE:-}" ]]; then
+  if [[ ! -d "${OMP_LOCAL_PACKAGE}" ]]; then
+    echo "error: OMP_LOCAL_PACKAGE is not a directory: ${OMP_LOCAL_PACKAGE}" >&2
+    exit 1
+  fi
+  if [[ ! -f "${OMP_LOCAL_PACKAGE}/package.json" ]]; then
+    echo "error: OMP_LOCAL_PACKAGE must point to a package directory with package.json: ${OMP_LOCAL_PACKAGE}" >&2
+    exit 1
+  fi
+  OMP_LOCAL_CONTEXT="$(cd "${OMP_LOCAL_PACKAGE}" && pwd -P)"
+else
+  # The Dockerfile always copies the named context; keep npm-release builds tiny.
+  OMP_LOCAL_CONTEXT="$(mktemp -d)"
+  trap 'rm -rf "${OMP_LOCAL_CONTEXT}"' EXIT
+fi
+
+DOCKER_BUILDKIT=1 "${DOCKER_CMD}" build "${BUILD_FLAGS[@]}" \
+  --build-context "omp-local=${OMP_LOCAL_CONTEXT}" \
   --build-arg "OMP_PACKAGE=${OMP_PACKAGE}" \
   --build-arg "OMP_VERSION=${OMP_VERSION}" \
+  --build-arg "OMP_LOCAL_PACKAGE=${OMP_LOCAL_PACKAGE:-}" \
   -f "${REPO_ROOT}/Dockerfile" \
   -t "${OMP_IMAGE}" \
+  --progress=plain \
   "${REPO_ROOT}"
 
 echo "Image '${OMP_IMAGE}' built successfully."

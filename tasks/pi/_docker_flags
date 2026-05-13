@@ -48,6 +48,13 @@ DOCKER_FLAGS=(
   "--env" "OMP_VERSION=${OMP_VERSION}"
 )
 
+# mount a global read-only agents dir for default discovery (ie. for .agents/skills)
+if [[ -n "${GLOBAL_AGENTS_DIR:-}" ]]; then
+  dirpath="${GLOBAL_AGENTS_DIR%/}"
+  dirname="${dirpath##*/}"
+  DOCKER_FLAGS+=("--volume" "${GLOBAL_AGENTS_DIR}:/home/piuser/${dirname}:ro")
+fi
+
 # Podman-specific: use --userns=keep-id to properly map the user namespace
 # and avoid "crun: chown `/dev/pts/0`: Invalid argument" errors.
 if [[ "${DOCKER_CMD}" == "podman" ]]; then

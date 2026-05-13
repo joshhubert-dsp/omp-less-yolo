@@ -373,14 +373,31 @@ All tasks (`pi`, `pi:readonly`, `pi:build`, `pi:shell`) work identically with po
 
 ## Customising the container
 
-To modify the container — adding tools, changing the base image, pinning different versions — edit `Dockerfile` and rebuild:
+To modify the container — adding tools, changing the base image, pinning different versions — either:
 
+1. edit the variables in your .env file and rerun `mise run install` to save them to the globally installed mise config for omp-less-yolo,
+2. OR edit `Dockerfile` directly.
+
+Then rebuild:
 ```bash
 # Edit Dockerfile...
 mise run pi:build
 ```
 
-The `OMP_VERSION` value in `.mise.toml` and the matching Dockerfile build arg pin the oh-my-pi version. `mise run pi:upgrade` updates it automatically; you can also edit the version string by hand.
+The `OMP_VERSION` value in your .env file and the matching Dockerfile build arg pin the oh-my-pi version. `mise run pi:upgrade` updates it automatically; you can also edit the version string by hand.
+
+To build the image with a local checkout or package directory instead of the npm release, set `OMP_LOCAL_PACKAGE` to the directory that contains the package's `package.json`:
+
+```bash
+OMP_LOCAL_PACKAGE=/path/to/oh-my-pi/packages/pi-coding-agent mise run pi:build
+```
+The build uses that directory only for the image build; normal `mise run pi` invocations run the package baked into the image.
+
+To attach a global agents directory (ie. ~/.agents) as a read-only volume for additional context at runtime, set `GLOBAL_AGENTS_DIR` to that directory:
+```bash
+GLOBAL_AGENTS_DIR=~/.agents mise run pi
+```
+
 
 ## Related projects
 
