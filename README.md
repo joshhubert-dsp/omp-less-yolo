@@ -203,11 +203,7 @@ The following environment variables are forwarded from your host into the contai
 
 Pi/oh-my-pi config variables (`PI_SKIP_VERSION_CHECK`, `PI_CACHE_RETENTION`, `PI_PACKAGE_DIR`) and editor variables (`VISUAL`, `EDITOR`) are also forwarded. No other host environment variables are passed into the container.
 
-**Auth file** (`~/.omp/auth.json`): credentials stored here take priority over environment variables.
-
-### Web Search
-
-The container forwards `EXA_API_KEY` and the default container prompt explicitly allows web search only through Exa. Other web-search provider keys such as Brave, Tavily, and Perplexity are intentionally not forwarded.
+**Auth file** (`~/.omp/auth.json`): credentials stored here take priority over environment variables. Use `/login` inside omp to set this up interactively.
 
 ## Security model
 

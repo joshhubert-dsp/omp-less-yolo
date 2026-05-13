@@ -1,61 +1,63 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
-  "github-actions": { "enabled": false },
-  "minimumReleaseAge": "3 days",
-  "packageRules": [
-    {
-      "matchCategories": ["docker"],
-      "enabled": false
-    },
-    {
-      "matchDepNames": ["@oh-my-pi/pi-coding-agent"],
-      "minimumReleaseAge": null
-    }
-  ],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^Dockerfile$/"],
-      "matchStrings": [
-        "MISE_VERSION=(?<currentValue>[\\d.]+)"
-      ],
-      "depNameTemplate": "mise",
-      "datasourceTemplate": "github-releases",
-      "packageNameTemplate": "jdx/mise"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^Dockerfile$/"],
-      "matchStrings": [
-        "mise (?:install|exec) uv@(?<currentValue>[\\d.]+)"
-      ],
-      "depNameTemplate": "uv",
-      "datasourceTemplate": "github-releases",
-      "packageNameTemplate": "astral-sh/uv"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^Dockerfile$/"],
-      "matchStrings": [
-        "uv python install (?<currentValue>[\\d.]+)",
-        "uv python find (?<currentValue>[\\d.]+)"
-      ],
-      "depNameTemplate": "python",
-      "datasourceTemplate": "github-tags",
-      "packageNameTemplate": "python/cpython",
-      "extractVersionTemplate": "^v(?<version>.*)$"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^Dockerfile$/", "/^README\\.md$/", "/^\\.mise\\.toml$/"],
-      "matchStrings": [
-        "ARG OMP_VERSION=\"(?<currentValue>[\\d.]+)\"",
-        "OMP_VERSION = \"(?<currentValue>[\\d.]+)\"",
-        "oh--my--pi-(?<currentValue>[\\d.]+)-blueviolet"
-      ],
-      "depNameTemplate": "@oh-my-pi/pi-coding-agent",
-      "datasourceTemplate": "npm"
-    }
-  ]
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": ["config:recommended"],
+    "github-actions": { "enabled": false },
+    "minimumReleaseAge": "3 days",
+    "packageRules": [
+        {
+            "matchCategories": ["docker"],
+            "enabled": false
+        },
+        {
+            "matchDepNames": ["@oh-my-pi/pi-coding-agent"],
+            "minimumReleaseAge": null
+        }
+    ],
+    "customManagers": [
+        {
+            "customType": "regex",
+            "managerFilePatterns": ["/^Dockerfile$/"],
+            "matchStrings": ["MISE_VERSION=(?<currentValue>[\\d.]+)"],
+            "depNameTemplate": "mise",
+            "datasourceTemplate": "github-releases",
+            "packageNameTemplate": "jdx/mise"
+        },
+        {
+            "customType": "regex",
+            "managerFilePatterns": ["/^Dockerfile$/"],
+            "matchStrings": [
+                "mise (?:install|exec) uv@(?<currentValue>[\\d.]+)"
+            ],
+            "depNameTemplate": "uv",
+            "datasourceTemplate": "github-releases",
+            "packageNameTemplate": "astral-sh/uv"
+        },
+        {
+            "customType": "regex",
+            "managerFilePatterns": ["/^Dockerfile$/"],
+            "matchStrings": [
+                "uv python install (?<currentValue>[\\d.]+)",
+                "uv python find (?<currentValue>[\\d.]+)"
+            ],
+            "depNameTemplate": "python",
+            "datasourceTemplate": "github-tags",
+            "packageNameTemplate": "python/cpython",
+            "extractVersionTemplate": "^v(?<version>.*)$"
+        },
+        {
+            "customType": "regex",
+            "managerFilePatterns": [
+                "/^Dockerfile$/",
+                "/^README\\.md$/",
+                "/^\\.mise\\.toml$/"
+            ],
+            "matchStrings": [
+                "ARG OMP_VERSION=\"(?<currentValue>[\\d.]+)\"",
+                "OMP_VERSION = \"(?<currentValue>[\\d.]+)\"",
+                "oh--my--pi-(?<currentValue>[\\d.]+)-blueviolet"
+            ],
+            "depNameTemplate": "@oh-my-pi/pi-coding-agent",
+            "datasourceTemplate": "npm"
+        }
+    ]
 }
